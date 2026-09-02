@@ -1,11 +1,20 @@
 # Informe Técnico
 
+Integrantes del grupo
+
+| Carnet    | Nombre                              | Rol                                     |
+|-----------|-------------------------------------|-----------------------------------------|
+| 202203069 | Bruce Carbonell Castillo Cifuentes  | coordinador                             |
+| 202209714 | Angel Enrique Alvarado Ruiz         | el que hace lo que dice el coordinador  |
+
 ## 1. Fuentes de datos y mapeo hacia el modelo
 
 | Fuente | Archivo extraído | Contenido principal | Entidades que alimenta |
 |--------|------------------|---------------------|------------------------|
 | Olympics Dataset by KeithGalli | bios.csv | Datos biográficos del atleta (nombre, nacimiento, medidas y afiliaciones) | atleta, club, atleta_club y pais |
 | Olympics Dataset by KeithGalli | results.csv | Resultado por evento/atleta (posición, medalla, disciplina) | participacion, evento, deporte, edicion, equipo |
+| Olympics Dataset by KeithGalli | population.csv | Valores de la población en base al país (NOC) y año | poblacion |
+| Olympics Dataset by KeithGalli | noc_regions.csv | id de los paises (NOC), su nombre y región | pais |
 | 120 years of olympic history athletes and results by heesoo37 | athlete_events.csv | Un renglón por atleta-evento con edad/altura/peso, equipo, año, ciudad, deporte, medalla | atleta, participacion, evento, edicion, deporte, equipo, pais |
 | Summer Olympics Medals (1896-2024) by stefanydeoliveira | olympics_dataset.csv | Registro histórico de Verano 1896–2024, deporte/evento/medalla | participacion, evento, deporte, edicion |
 | datasets olympics by datacamp | datalab_export.csv | Dataset "Olympics" de R (ciudad, año, deporte, atleta, país, género, evento, medalla) | participacion, evento, deporte, edicion, atleta |
@@ -17,9 +26,7 @@ lo pasamos a español) en el modelo unificado (con reasignación de IDs al momen
 ya que cada fuente trae su propio identificador).
 
 Como las cuatro fuentes describen el mismo dominio con columnas distintas
-(`Sport` vs. `Discipline`, `Team` vs. `NOC`, `Pos` vs. `Rank`, etc.), el modelo
-que sigue es la **capa de integración**: cada fuente se transforma (ETL) hacia
-este esquema común antes de cargarse a la base de datos relacional.
+(`Sport` vs. `Discipline`, `Team` vs. `NOC`, `Pos` vs. `Rank`, etc.).  
 
 ## 2. Entidades
 
@@ -32,7 +39,16 @@ Representa un Comité Olímpico Nacional (NOC) o país participante (una sede).
 | nombre_pais | varchar(100) | Nombre del NOC         | -     |
 | region      | varchar(100) | Agrupación continental | -     |
 
-### 2.2 atleta
+### 2.2 poblacion
+Represnta a la cantidad de personas que habitan el pais durante la edición y evento en base a un anio y un pais.
+
+| Atributo    | Tipo        | Descripción                                     | Llave |
+|-------------|-------------|-------------------------------------------------|-------|
+| pais_id     | varchar(3)  | identificador pais (NOC)                        | PK    |
+| anio        | int         | nombre del club/affiliations                    | PK    |
+| poblacion   | int         | total de habitantes de un pais en base al anio  | -     |
+
+### 2.3 atleta
 Un deportista individual, con sus datos biográficos.
 
 | Atributo            | Tipo         | Descripción                                            | Llave |
@@ -49,8 +65,8 @@ Un deportista individual, con sus datos biográficos.
 | peso_kg             | int          | De Measurements en bios.csv                            | -     |
 | pais_id             | varchar(3)   | Nacionalidad principal declarada                       | FK    |
 
-### 2.3 edicion
-Una edición específica de los Juegos Olímpicos (ej. "1924 Summer Olympics").
+### 2.4 edicion
+Una edición específica de los Juegos Olímpicos.
 
 | Atributo          | Tipo          | Descripción                 | Llave |
 |-------------------|---------------|-----------------------------|-------|
@@ -61,7 +77,7 @@ Una edición específica de los Juegos Olímpicos (ej. "1924 Summer Olympics").
 | ciudad            | varchar(100)  | Ciudad sede                 | -     |
 | pais_sede_id      | varchar(3)    | País sede de esa edición    | FK    |
 
-### 2.4 deporte
+### 2.5 deporte
 Catálogo de deportes/disciplinas (unifica `Sport` y `Discipline` de las fuentes).
 
 | Atributo          | Tipo          | Descripción                     | Llave |
@@ -69,9 +85,8 @@ Catálogo de deportes/disciplinas (unifica `Sport` y `Discipline` de las fuentes
 | deporte_id        | int           | identificador                   | PK    |
 | nombre_deporte    | varchar(100)  | Nombre normalizado del deporte  | -     |
 
-### 2.5 evento
-Una prueba específica dentro de un deporte, en una edición determinada
-(ej. "Singles, Men" de Tenis en 1924).
+### 2.6 evento
+Una prueba específica dentro de un deporte, en una edición determinada, por ejemplo: "Singles, Men" de Tenis en 1924.
 
 | Atributo        | Tipo          | Descripción                 | Llave |
 |-----------------|---------------|-----------------------------|-------|
@@ -80,7 +95,7 @@ Una prueba específica dentro de un deporte, en una edición determinada
 | deporte_id      | int           | Deporte al que pertenece    | FK    |
 | nombre_evento   | varchar(255)  | Nombre de la prueba/evento  | -     |
 
-### 2.6 equipo
+### 2.7 equipo
 Agrupa a los atletas que compitieron como escuadra/selección/dupla en un
 evento puntual (relevos, dobles, deportes de equipo). Permite modelar
 resultados grupales sin duplicar el resultado por cada atleta.
@@ -92,7 +107,7 @@ resultados grupales sin duplicar el resultado por cada atleta.
 | pais_id         | varchar(3)    | País/selección que representa (nulo si es equipo mixto/club)  | FK    |
 | nombre_equipo   | varchar(150)  | Nombre del equipo tal como aparece en la fuente               | -     |
 
-### 2.7 club
+### 2.8 club
 Club o institución a la que estuvo afiliado un atleta (bios.csv: `Affiliations`).
 
 | Atributo      | Tipo          | Descripción                         | Llave |
@@ -101,7 +116,7 @@ Club o institución a la que estuvo afiliado un atleta (bios.csv: `Affiliations`
 | nombre_club   | varchar(255)  | nombre del club/affiliations        | -     |
 | pais_id       | varchar(3)    | País del club, si se conoce         | FK    |
 
-### 2.8 atleta_club
+### 2.9 atleta_club
 Tabla puente ya que un atleta puede haber pertenecido a varios clubes a lo largo
 de su carrera, y un club tiene varios atletas afiliados.
 
@@ -110,7 +125,7 @@ de su carrera, y un club tiene varios atletas afiliados.
 | atleta_id   | int   | identificador de atleta               | Compuesta |
 | club_id     | int   | identificador del club/affiliations   | Compuesta |
 
-### 2.9 participacion
+### 2.10 participacion
 Cada renglón es la participación de un atleta en un evento (equivalente a un
 renglón de `results.csv` o `athlete_events.csv`).
 
@@ -133,6 +148,7 @@ renglón de `results.csv` o `athlete_events.csv`).
 |-----------|---------------|---------------|-----------------------------------------------------------------------------------------------------------------------------|
 | pais      | atleta        | 1:N           | Un país es la nacionalidad de muchos atletas, un atleta tiene un país de nacionalidad principal                             |
 | pais      | edicion       | 1:N           | Un país puede haber sido sede de varias ediciones, una edición tiene un único país sede                                     |
+| pais      | poblacion     | 1:N           | la población de un país depende del país y del año en específico.                                                           |
 | pais      | equipo        | 1:N           | Un país puede tener muchos equipos (uno por evento en el que compitió), un equipo representa a un solo país                 |
 | pais      | club          | 1:N           | Un país puede tener muchos clubes registrados, un club pertenece a un país                                                  |
 | pais      | participacion | 1:N           | Un país es representado en muchas participaciones, cada participación se hace bajo un solo país                             |
@@ -153,6 +169,16 @@ Table pais {
   pais_id varchar(3) [pk]
   nombre_pais varchar(100) [not null]
   region varchar(100)
+}
+
+Table poblacion {
+  pais_id varchar(3) [ref: > pais.pais_id]
+  anio int
+  poblacion bigint
+
+  indexes {
+    (pais_id, anio) [pk]
+  }
 }
 
 Table atleta {
@@ -245,23 +271,10 @@ Table participacion {
   numéricos como `DNS`, `DNF`, `=17`, por lo que se modela como `varchar`.
 - **`club`/`atleta_club` es una extensión opcional** alimentada solo por
   `bios.csv` (columna `Affiliations`, que trae varias afiliaciones separadas
-  por `/`); si no se prioriza en el alcance de la Fase 1, puede excluirse sin
-  afectar el resto del modelo.
+  por `/`).
 
 ## 6. Pendientes
 
-1. Escribir los scripts DDL (`CREATE TABLE`, llaves primarias/foráneas, índices
-   sobre `atleta.nombre_completo`, `pais.pais_id`, `edicion.anio`).  
-2. Escribir los scripts ETL de carga por fuente, mapeando cada CSV a las
-   entidades de la sección 1.  
-3. Definir reglas de deduplicación de atletas entre fuentes (por nombre +
-   país + fecha de nacimiento, ya que los `athlete_id` no coinciden entre
-   fuentes).  
-4. Implementar los stored procedures d) y e).  
-  - **Por atleta:** `atleta` → `participacion` → `evento` → (`edicion`,
-    `deporte`) permite listar todas las participaciones, resultados y medallas
-    de un atleta, con filtros opcionales por `deporte_id`, `pais_representado_id`
-    y `edicion.anio`.  
-  - **Por país:** `pais` → `participacion` (vía `pais_representado_id`) da
-    participaciones/medallas/resultados por año; `pais` → `edicion` (vía
-    `pais_sede_id`) responde si el país ha sido sede y en qué años.
+1. Definir reglas de duplicación de atletas entre fuentes.  
+2. Escribir los scripts ETL de carga por fuente, mapeando cada CSV, el inciso c).  
+3. Implementar los stored procedures d) y e).  
