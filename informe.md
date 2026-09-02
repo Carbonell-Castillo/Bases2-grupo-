@@ -48,7 +48,6 @@ Un deportista individual, con sus datos biográficos.
 | estatura_cm         | int          | De Measurements en bios.csv                            | -     |
 | peso_kg             | int          | De Measurements en bios.csv                            | -     |
 | pais_id             | varchar(3)   | Nacionalidad principal declarada                       | FK    |
-| fuente_origen       | varchar(100) | CSV(s) desde donde se cargó/reconcilió el registro     | -     |
 
 ### 2.3 edicion
 Una edición específica de los Juegos Olímpicos (ej. "1924 Summer Olympics").
@@ -125,7 +124,6 @@ renglón de `results.csv` o `athlete_events.csv`).
 | nombre_en_competencia | varchar(255)  | Nombre bajo el que compitió (results.csv: As)                 | -         |
 | posicion              | varchar(20)   | Posición final, admite valores no numéricos (=17, DNS, DNF)   | -         |
 | medalla               | varchar(10)   | Oro / Plata / Bronce / nulo si no hubo medalla                | -         |
-| fuente_origen         | varchar(100)  | CSV de origen de ese registro                                 | -         |
 
 **Nota:** en `pais_representado_id` puede diferir de `atleta.pais_id` si cambió de nacionalidad deportiva, por eso se hace énfasis sobre a participación.
 
@@ -169,7 +167,6 @@ Table atleta {
   estatura_cm int
   peso_kg int
   pais_id varchar(3) [ref: > pais.pais_id]
-  fuente_origen varchar(100)
 }
 
 Table edicion {
@@ -224,7 +221,6 @@ Table participacion {
   nombre_en_competencia varchar(255)
   posicion varchar(20)
   medalla varchar(10)
-  fuente_origen varchar(100)
 }
 ```
 
@@ -244,11 +240,7 @@ Table participacion {
   nacionalidad deportiva); `atleta.pais_id` guarda la nacionalidad de
   referencia y `participacion.pais_representado_id` la usada en cada
   participación puntual, esto también resuelve el requerimiento e) de listar
-  participaciones por país.
-- **`fuente_origen` como columna de trazabilidad.** Dado que el proyecto pide
-  "apoyarse en la revisión de calidad de los datos" contra el sitio oficial,
-  conservar de qué CSV(s) proviene o fue reconciliado cada registro facilita
-  auditar duplicados y discrepancias entre fuentes.
+  participaciones por país.  
 - **`posicion` como texto, no numérico.** Los datasets incluyen valores no
   numéricos como `DNS`, `DNF`, `=17`, por lo que se modela como `varchar`.
 - **`club`/`atleta_club` es una extensión opcional** alimentada solo por

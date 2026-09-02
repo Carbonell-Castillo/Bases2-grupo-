@@ -15,8 +15,7 @@ CREATE TABLE "atleta" (
   "lugar_fallecimiento" varchar(255),
   "estatura_cm" int,
   "peso_kg" int,
-  "pais_id" varchar(3),
-  "fuente_origen" varchar(100)
+  "pais_id" varchar(3)
 );
 
 CREATE TABLE "edicion" (
@@ -67,8 +66,7 @@ CREATE TABLE "participacion" (
   "pais_representado_id" varchar(3),
   "nombre_en_competencia" varchar(255),
   "posicion" varchar(20),
-  "medalla" varchar(10),
-  "fuente_origen" varchar(100)
+  "medalla" varchar(10)
 );
 
 ALTER TABLE "atleta" ADD FOREIGN KEY ("pais_id") REFERENCES "pais" ("pais_id") DEFERRABLE INITIALLY IMMEDIATE;
